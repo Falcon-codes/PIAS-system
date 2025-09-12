@@ -56,16 +56,16 @@ if GROQ_AVAILABLE:
         GROQ_AVAILABLE = False
 
 # Configuration
-UPLOAD_FOLDER = 'uploads'
 ALLOWED_EXTENSIONS = {'csv'}
 MAX_CONTENT_LENGTH = 25 * 1024 * 1024  # 25MB max file size
+
+# Use system temp directory for cloud deployment compatibility
+UPLOAD_FOLDER = tempfile.gettempdir()
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = MAX_CONTENT_LENGTH
 
-# Ensure directories exist
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-os.makedirs('templates', exist_ok=True)
+print(f"📁 Using upload directory: {UPLOAD_FOLDER}")
 
 # Production database storage
 try:
@@ -173,14 +173,20 @@ def upload_csv():
                 'type': 'validation_error'
             }), 400
 
-        # Save file securely
+        # Save file securely using temporary directory
         filename = secure_filename(file.filename)
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         unique_filename = f"{timestamp}_{session_id}_{filename}"
-        temp_file_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
+        
+        # Use tempfile.mktemp for better cloud compatibility
+        temp_file_path = os.path.join(tempfile.gettempdir(), unique_filename)
+        
+        print(f"📁 Attempting to save file to: {temp_file_path}")
+        print(f"📁 Upload directory permissions: {oct(os.stat(tempfile.gettempdir()).st_mode)[-3:]}")
         
         file.save(temp_file_path)
-        print(f"📁 File saved: {temp_file_path}")
+        print(f"✅ File saved successfully: {temp_file_path}")
+        print(f"📊 File size: {os.path.getsize(temp_file_path)} bytes")
 
         # Process the CSV with enhanced error handling
         try:
@@ -295,13 +301,28 @@ def upload_csv():
 
     except Exception as e:
         print(f"❌ Upload error: {str(e)}")
+        print(f"❌ Error type: {type(e).__name__}")
+        print(f"❌ Traceback:")
         print(traceback.format_exc())
+        
+        # Provide detailed error information
+        error_details = {
+            'error_type': type(e).__name__,
+            'error_message': str(e),
+            'upload_dir': tempfile.gettempdir(),
+            'session_id': session_id
+        }
         
         return jsonify({
             'success': False,
-            'error': 'Upload failed. Please try again.',
-            'details': str(e) if app.debug else None,
-            'type': 'upload_error'
+            'error': f'Upload failed: {str(e)}',
+            'details': error_details,
+            'type': 'upload_error',
+            'debug_info': {
+                'temp_dir': tempfile.gettempdir(),
+                'session_id': session_id,
+                'timestamp': datetime.now().isoformat()
+            }
         }), 500
 
     finally:
