@@ -985,6 +985,83 @@ def dashboard_page():
         <script>window.location.href = '/';</script>
         """
 
+# Debug endpoint to test uploads
+@app.route('/api/debug-upload', methods=['POST'])
+def debug_upload():
+    """Debug endpoint to test file upload functionality step by step"""
+    try:
+        print("🔍 Debug upload started...")
+        
+        # Step 1: Check if file is in request
+        print(f"📝 Request files: {list(request.files.keys())}")
+        print(f"📝 Request form: {list(request.form.keys())}")
+        
+        if 'csvFile' not in request.files:
+            return jsonify({
+                'success': False,
+                'error': 'No csvFile in request.files',
+                'debug': {
+                    'files_keys': list(request.files.keys()),
+                    'form_keys': list(request.form.keys())
+                }
+            }), 400
+        
+        file = request.files['csvFile']
+        print(f"📁 File object: {file}")
+        print(f"📁 Filename: {file.filename}")
+        print(f"📁 Content type: {file.content_type}")
+        
+        # Step 2: Test temp directory
+        temp_dir = tempfile.gettempdir()
+        print(f"📁 Temp directory: {temp_dir}")
+        print(f"📁 Temp dir exists: {os.path.exists(temp_dir)}")
+        print(f"📁 Temp dir writable: {os.access(temp_dir, os.W_OK)}")
+        
+        # Step 3: Test file save
+        test_filename = f"debug_test_{uuid.uuid4()}.csv"
+        test_path = os.path.join(temp_dir, test_filename)
+        print(f"📁 Test path: {test_path}")
+        
+        file.save(test_path)
+        print(f"✅ File saved successfully")
+        
+        # Step 4: Test file read
+        file_size = os.path.getsize(test_path)
+        print(f"📊 File size: {file_size} bytes")
+        
+        # Step 5: Test pandas read
+        import pandas as pd
+        df = pd.read_csv(test_path)
+        print(f"📊 DataFrame shape: {df.shape}")
+        print(f"📊 DataFrame columns: {list(df.columns)}")
+        
+        # Cleanup
+        os.remove(test_path)
+        print(f"🧹 Test file cleaned up")
+        
+        return jsonify({
+            'success': True,
+            'debug': {
+                'temp_dir': temp_dir,
+                'file_size': file_size,
+                'df_shape': df.shape,
+                'df_columns': list(df.columns),
+                'message': 'All tests passed!'
+            }
+        })
+        
+    except Exception as e:
+        print(f"❌ Debug error: {str(e)}")
+        print(f"❌ Error type: {type(e).__name__}")
+        print(traceback.format_exc())
+        
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'error_type': type(e).__name__,
+            'traceback': traceback.format_exc()
+        }), 500
+
 # Authentication API endpoints
 @app.route('/api/login', methods=['POST'])
 def api_login():
