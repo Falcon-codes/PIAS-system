@@ -463,8 +463,10 @@
     </main>
 
     <script>
-        // Enhanced API Configuration
-        const API_BASE_URL = 'http://localhost:5000/api';
+        // Enhanced API Configuration - Dynamic URL Detection
+        const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+            ? 'http://localhost:5000/api' 
+            : '/api';
         
         // Global State Management
         let appState = {
