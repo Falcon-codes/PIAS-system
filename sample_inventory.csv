@@ -1,0 +1,21 @@
+Product Name,Category,Current Stock,Monthly Sales,Reorder Level,Unit Price
+Widget A,Electronics,50,25,30,15.99
+Gadget B,Electronics,15,40,35,29.99
+Tool C,Hardware,120,20,25,8.75
+Device D,Electronics,5,60,50,99.99
+Component E,Electronics,200,10,15,4.50
+Accessory F,Electronics,75,35,40,12.99
+Part G,Hardware,80,15,20,6.25
+Machine H,Industrial,25,8,10,250.00
+Supply I,Office,300,50,75,2.99
+Equipment J,Industrial,40,12,15,180.50
+Material K,Hardware,180,30,35,3.75
+Instrument L,Electronics,95,45,50,65.00
+Article M,Office,250,80,100,1.99
+Product N,Electronics,30,55,60,45.99
+Item O,Hardware,110,25,30,9.99
+Unit P,Industrial,60,18,20,125.75
+Object Q,Office,400,120,150,0.99
+Thing R,Electronics,85,38,45,22.50
+Element S,Hardware,70,22,25,7.80
+Factor T,Industrial,35,14,18,195.00

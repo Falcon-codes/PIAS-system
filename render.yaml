@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: pias-inventory-analyzer
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn -c gunicorn_config.py api:application
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.0
+      - key: FLASK_ENV
+        value: production
+      - key: GROQ_API_KEY
+        sync: false  # Set this in Render dashboard
+      - key: SECRET_KEY
+        generateValue: true
+      - key: MPLBACKEND
+        value: Agg
+    healthCheckPath: /api/health
+    disk:
+      name: pias-disk
+      mountPath: /opt/render/project/data
+      sizeGB: 1
+    regions:
+      - ohio  # or virginia, singapore, etc.
