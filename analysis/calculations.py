@@ -47,18 +47,21 @@ class InventoryCalculations:
         # Calculate annual sales (assuming sales data is monthly)
         self.df['Annual_Sales'] = self.df[self.cols['sales']] * 12
         
-        # Calculate Cost of Goods Sold (COGS) - estimate if price not available
+        # Calculate unit cost for all calculations
         if self.cols.get('price') and self.cols['price'] in self.df.columns:
-            self.df[self.cols['price']] = pd.to_numeric(self.df[self.cols['price']], errors='coerce')
-            self.df['COGS'] = self.df['Annual_Sales'] * self.df[self.cols['price']]
+            self.df[self.cols['price']] = pd.to_numeric(self.df[self.cols['price']], errors='coerce').fillna(25)
+            unit_cost = self.df[self.cols['price']]
         else:
-            # Estimate COGS based on sales volume (industry standard estimation)
-            self.df['COGS'] = self.df['Annual_Sales'] * 25  # $25 average unit cost estimation
+            unit_cost = 25  # Default unit cost
+            
+        # Calculate Cost of Goods Sold (COGS)
+        self.df['COGS'] = self.df['Annual_Sales'] * unit_cost
         
         # Calculate Inventory Turnover Ratio (Professional Formula)
+        inventory_value = self.df[self.cols['stock']] * unit_cost
         self.df['Inventory_Turnover'] = np.where(
-            self.df[self.cols['stock']] > 0,
-            self.df['COGS'] / (self.df[self.cols['stock']] * self.df.get('COGS', 25) / self.df['Annual_Sales']),
+            inventory_value > 0,
+            self.df['COGS'] / inventory_value,
             0
         )
         
@@ -95,12 +98,7 @@ class InventoryCalculations:
         ordering_cost = 50  # Estimated ordering cost per order
         holding_cost_rate = 0.25  # 25% annual holding cost rate
         
-        unit_cost = np.where(
-            self.cols.get('price') and self.cols['price'] in self.df.columns,
-            self.df[self.cols['price']],
-            25  # Default unit cost
-        )
-        
+        # Use the unit_cost already calculated above
         holding_cost = unit_cost * holding_cost_rate
         
         self.df['EOQ'] = np.sqrt(
@@ -119,12 +117,24 @@ class InventoryCalculations:
     def _calculate_abc_analysis(self) -> pd.DataFrame:
         """Calculate ABC analysis based on inventory value and turnover"""
         df_sorted = self.df.copy()
-        df_sorted['Revenue_Impact'] = df_sorted['Annual_Sales'] * df_sorted.get('COGS', 25) / df_sorted['Annual_Sales']
+        
+        # Fixed: Use Annual_Sales * unit_cost for revenue impact (not divided by itself)
+        unit_cost = np.where(
+            self.cols.get('price') and self.cols['price'] in self.df.columns,
+            self.df[self.cols['price']].fillna(25),  # Fill NaN with default
+            25  # Default unit cost
+        )
+        df_sorted['Revenue_Impact'] = df_sorted['Annual_Sales'] * unit_cost
         df_sorted = df_sorted.sort_values('Revenue_Impact', ascending=False)
         
         cumulative_value = df_sorted['Revenue_Impact'].cumsum()
         total_value = df_sorted['Revenue_Impact'].sum()
-        cumulative_percent = (cumulative_value / total_value) * 100
+        
+        # Avoid division by zero
+        if total_value > 0:
+            cumulative_percent = (cumulative_value / total_value) * 100
+        else:
+            cumulative_percent = pd.Series([100] * len(df_sorted), index=df_sorted.index)
         
         # ABC Classification
         conditions = [
