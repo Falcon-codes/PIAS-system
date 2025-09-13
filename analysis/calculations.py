@@ -17,8 +17,8 @@ class InventoryCalculations:
         self.cols = columns_map
         self.safety_stock_multiplier = 1.5
         self.optimal_turnover_target = 4.0
-        self._prepare_data()
-        self._validate_data()
+        self._validate_data()  # VALIDATE FIRST
+        self._prepare_data()   # THEN PREPARE
 
     def _validate_data(self):
         """Validate input data and columns"""
