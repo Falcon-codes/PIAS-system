@@ -3,7 +3,7 @@ services:
     name: pias-inventory-analyzer
     env: python
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn -c gunicorn_config.py api:application
+    startCommand: gunicorn -c gunicorn_config.py api:app
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.0
